@@ -252,6 +252,8 @@ class TrainingTrainer:
             try:
                 TrainingTrainer._generate_previews(adapter, training_spec, training_state)
             finally:
+                gc.collect()
+                mx.clear_cache()
                 restored_state = tree_unflatten(list(mx.load(str(offload_path)).items()))
                 optimizer.optimizer.state = restored_state
                 gc.collect()
