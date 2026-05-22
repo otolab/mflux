@@ -29,25 +29,19 @@ class TestGradientCheckpointing:
     def test_enabled_when_low_ram(self):
         transformer = _DummyTransformer()
         training_spec = SimpleNamespace(low_ram=True)
-        enable_gc = getattr(transformer, 'enable_gradient_checkpointing', None)
-        if training_spec.low_ram and callable(enable_gc):
-            enable_gc(True)
+        TrainingTrainer._enable_gradient_checkpointing(transformer, training_spec)
         assert transformer._gradient_checkpointing is True
 
     def test_not_enabled_when_not_low_ram(self):
         transformer = _DummyTransformer()
         training_spec = SimpleNamespace(low_ram=False)
-        enable_gc = getattr(transformer, 'enable_gradient_checkpointing', None)
-        if training_spec.low_ram and callable(enable_gc):
-            enable_gc(True)
+        TrainingTrainer._enable_gradient_checkpointing(transformer, training_spec)
         assert transformer._gradient_checkpointing is False
 
     def test_not_enabled_when_method_absent(self):
         transformer = _DummyTransformerNoGC()
         training_spec = SimpleNamespace(low_ram=True)
-        enable_gc = getattr(transformer, 'enable_gradient_checkpointing', None)
-        if training_spec.low_ram and callable(enable_gc):
-            enable_gc(True)
+        TrainingTrainer._enable_gradient_checkpointing(transformer, training_spec)
         assert not hasattr(transformer, '_gradient_checkpointing')
 
 

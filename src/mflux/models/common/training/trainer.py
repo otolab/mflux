@@ -115,12 +115,10 @@ class TrainingTrainer:
 
         # Freeze base weights and unfreeze LoRA weights
         adapter.freeze_base()
-        TrainingTrainer._unfreeze_lora_layers(adapter.transformer())
-
         transformer = adapter.transformer()
-        enable_gc = getattr(transformer, 'enable_gradient_checkpointing', None)
-        if training_spec.low_ram and callable(enable_gc):
-            enable_gc(True)
+        TrainingTrainer._unfreeze_lora_layers(transformer)
+
+        TrainingTrainer._enable_gradient_checkpointing(transformer, training_spec)
 
         train_step_function = nn.value_and_grad(
             model=adapter.model(),
@@ -176,6 +174,12 @@ class TrainingTrainer:
                 for lora in child.loras:
                     if getattr(lora, "_mflux_lora_role", None) == "train":
                         lora.unfreeze(keys=["lora_A", "lora_B"], strict=False)
+
+    @staticmethod
+    def _enable_gradient_checkpointing(transformer, training_spec: TrainingSpec) -> None:
+        enable_gc = getattr(transformer, 'enable_gradient_checkpointing', None)
+        if training_spec.low_ram and callable(enable_gc):
+            enable_gc(True)
 
     @staticmethod
     def _preview_dimensions(training_spec: TrainingSpec, *, preview_image: Path | None = None) -> tuple[int, int]:
