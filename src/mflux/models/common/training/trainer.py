@@ -117,8 +117,8 @@ class TrainingTrainer:
         adapter.freeze_base()
         TrainingTrainer._unfreeze_lora_layers(adapter.transformer())
 
-        if training_spec.low_ram and hasattr(adapter.transformer(), '_gradient_checkpointing'):
-            adapter.transformer()._gradient_checkpointing = True
+        if training_spec.low_ram and hasattr(adapter.transformer(), 'enable_gradient_checkpointing'):
+            adapter.transformer().enable_gradient_checkpointing(True)
 
         train_step_function = nn.value_and_grad(
             model=adapter.model(),

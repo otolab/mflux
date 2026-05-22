@@ -66,6 +66,9 @@ class Flux2Transformer(nn.Module):
         self.proj_out = nn.Linear(self.inner_dim, patch_size * patch_size * self.out_channels, bias=False)
         self._gradient_checkpointing = False
 
+    def enable_gradient_checkpointing(self, enabled: bool = True) -> None:
+        self._gradient_checkpointing = enabled
+
     def __call__(
         self,
         hidden_states: mx.array,
@@ -110,8 +113,8 @@ class Flux2Transformer(nn.Module):
         temb_mod_params_img = self.double_stream_modulation_img(temb)
         temb_mod_params_txt = self.double_stream_modulation_txt(temb)
 
-        for block in self.transformer_blocks:
-            block_fn = checkpoint(block) if self._gradient_checkpointing else block
+        double_blocks = [checkpoint(b) for b in self.transformer_blocks] if self._gradient_checkpointing else self.transformer_blocks
+        for block_fn in double_blocks:
             encoder_hidden_states, hidden_states = block_fn(
                 hidden_states=hidden_states,
                 encoder_hidden_states=encoder_hidden_states,
@@ -123,8 +126,8 @@ class Flux2Transformer(nn.Module):
         hidden_states = mx.concatenate([encoder_hidden_states, hidden_states], axis=1)
 
         temb_mod_params_single = self.single_stream_modulation(temb)[0]
-        for block in self.single_transformer_blocks:
-            block_fn = checkpoint(block) if self._gradient_checkpointing else block
+        single_blocks = [checkpoint(b) for b in self.single_transformer_blocks] if self._gradient_checkpointing else self.single_transformer_blocks
+        for block_fn in single_blocks:
             hidden_states = block_fn(
                 hidden_states=hidden_states,
                 temb_mod_params=temb_mod_params_single,
