@@ -12,6 +12,39 @@ class _DummyOptimizer:
         self.saved_paths.append(path)
 
 
+class _DummyTransformer:
+    def __init__(self, supports_gc=True):
+        self._gradient_checkpointing = False
+        self._supports_gc = supports_gc
+
+    def enable_gradient_checkpointing(self, enabled=True):
+        self._gradient_checkpointing = enabled
+
+
+class _DummyTransformerNoGC:
+    pass
+
+
+class TestGradientCheckpointing:
+    def test_enabled_when_low_ram(self):
+        transformer = _DummyTransformer()
+        training_spec = SimpleNamespace(low_ram=True)
+        TrainingTrainer._enable_gradient_checkpointing(transformer, training_spec)
+        assert transformer._gradient_checkpointing is True
+
+    def test_not_enabled_when_not_low_ram(self):
+        transformer = _DummyTransformer()
+        training_spec = SimpleNamespace(low_ram=False)
+        TrainingTrainer._enable_gradient_checkpointing(transformer, training_spec)
+        assert transformer._gradient_checkpointing is False
+
+    def test_not_enabled_when_method_absent(self):
+        transformer = _DummyTransformerNoGC()
+        training_spec = SimpleNamespace(low_ram=True)
+        TrainingTrainer._enable_gradient_checkpointing(transformer, training_spec)
+        assert not hasattr(transformer, '_gradient_checkpointing')
+
+
 class TestTrainingTrainer:
     def test_generate_previews_with_optimizer_offload_low_ram(self, monkeypatch):
         dummy_optimizer = _DummyOptimizer(state=["original_state"])
@@ -41,8 +74,8 @@ class TestTrainingTrainer:
         assert dummy_optimizer.saved_paths[0].name == "optimizer_offload.safetensors"
         assert preview_state_snapshots == [[]]
         assert dummy_optimizer.optimizer.state == ["restored", [("k", "v")]]
-        assert len(clear_cache_calls) == 2
-        assert len(gc_calls) == 2
+        assert len(clear_cache_calls) == 3
+        assert len(gc_calls) == 3
 
     def test_generate_previews_with_optimizer_offload_non_low_ram(self, monkeypatch):
         dummy_optimizer = _DummyOptimizer(state=["original_state"])
@@ -72,5 +105,5 @@ class TestTrainingTrainer:
         assert dummy_optimizer.saved_paths[0].name == "optimizer_offload.safetensors"
         assert preview_state_snapshots == [[]]
         assert dummy_optimizer.optimizer.state == ["restored", [("k", "v")]]
-        assert len(clear_cache_calls) == 2
-        assert len(gc_calls) == 2
+        assert len(clear_cache_calls) == 3
+        assert len(gc_calls) == 3
