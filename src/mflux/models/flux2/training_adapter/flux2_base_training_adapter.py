@@ -100,13 +100,13 @@ class Flux2BaseTrainingAdapter(TrainingAdapter):
             },
         )
 
-    def load_lora_adapter(self, *, path: str | Path) -> None:
+    def load_lora_adapter(self, *, path: str | Path, role: str | None = "train") -> None:
         LoRALoader.load_and_apply_lora(
             lora_mapping=Flux2LoRAMapping.get_mapping(),
             transformer=self._flux2.transformer,
             lora_paths=[str(path)],
             lora_scales=[1.0],
-            role="train",
+            role=role,
         )
 
     def load_training_adapter(self, *, path: str | Path, scale: float = 1.0) -> None:

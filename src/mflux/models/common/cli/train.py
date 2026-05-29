@@ -14,10 +14,17 @@ def main():
 
     config_path = args.config
     resume_path = args.resume
+    base_lora_path = args.base_lora
     if config_path is not None and not config_path.exists():
         parser.error(f"Config file not found: {config_path}")
     if resume_path is not None and not resume_path.exists():
         parser.error(f"Checkpoint not found: {resume_path}")
+    if base_lora_path is not None and not base_lora_path.exists():
+        parser.error(f"Base LoRA file not found: {base_lora_path}")
+    if base_lora_path is not None and resume_path is not None:
+        parser.error("--base-lora cannot be used with --resume")
+    if base_lora_path is not None and config_path is None:
+        parser.error("--base-lora requires --config")
 
     if args.dry_run:
         TrainingSpec.resolve(
@@ -32,6 +39,7 @@ def main():
         TrainingRunner.train(
             config_path=str(config_path) if config_path is not None else None,
             resume_path=str(resume_path) if resume_path is not None else None,
+            base_lora_path=str(base_lora_path) if base_lora_path is not None else None,
         )
     except StopTrainingException as stop_exc:
         print(stop_exc)

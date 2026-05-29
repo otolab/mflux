@@ -216,6 +216,13 @@ class CommandLineParser(argparse.ArgumentParser):
             help="Path to a training checkpoint zip to resume.",
         )
         self.add_argument(
+            "--base-lora",
+            dest="base_lora",
+            type=Path,
+            required=False,
+            help="Path to a LoRA safetensors file to use as a frozen base for continued training.",
+        )
+        self.add_argument(
             "--dry-run",
             action="store_true",
             help="Validate training config/checkpoint and exit.",
