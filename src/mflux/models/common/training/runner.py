@@ -52,7 +52,7 @@ class TrainingRunner:
         )
 
     @staticmethod
-    def train(*, config_path: str | None, resume_path: str | None) -> tuple[TrainingAdapter, TrainingSpec]:
+    def train(*, config_path: str | None, resume_path: str | None, base_lora_path: str | None = None) -> tuple[TrainingAdapter, TrainingSpec]:
         training_spec = TrainingSpec.resolve(config_path=config_path, resume_path=resume_path)
 
         # Set global seed for MLX randomness
@@ -94,6 +94,9 @@ class TrainingRunner:
                 filename=training_spec.lora_layers.state_path,
                 loader=lambda lora_file: adapter.load_lora_adapter(path=lora_file),
             )
+        elif base_lora_path is not None:
+            adapter.load_lora_adapter(path=base_lora_path, role=None)
+            inject_lora_targets(adapter.transformer(), training_spec.lora_layers.targets)
         else:
             inject_lora_targets(adapter.transformer(), training_spec.lora_layers.targets)
 
